@@ -1,65 +1,75 @@
-import React from "react";
+import { useState, useEffect } from "react";
 import Edit from "../assets/edit.png";
 import Delete from "../assets/delete.png";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import Menu from "../components/Menu";
+import axios from "axios";
+import moment from "moment";
+import { useContext } from "react";
+import { AuthContext } from "../context/authContext";
 
 const Single = () => {
+  const [post, setPost] = useState({});
+
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const postId = location.pathname.split("/")[2];
+
+  const { currentUser } = useContext(AuthContext);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await axios.get(
+          `${import.meta.env.VITE_REACT_BASE_URL}/posts/${postId}`
+        );
+
+        setPost(res.data);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    fetchData();
+  }, [postId]);
+
+  const handleDelete = async () => {
+    try {
+      await axios.delete(
+        `${import.meta.env.VITE_REACT_BASE_URL}/posts/${postId}`
+      );
+      navigate("/");
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
   return (
     <div className='single'>
       <div className='content'>
-        <img
-          src='https://images.pexels.com/photos/7008010/pexels-photo-7008010.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2'
-          alt=''
-        />
+        <img src={post?.img} alt='' />
         <div className='user'>
           <img
             src='https://images.pexels.com/photos/7008010/pexels-photo-7008010.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2'
             alt=''
           />
           <div className='info'>
-            <span>John</span>
-            <p>Posted 2 days ago</p>
+            <span>{post.username}</span>
+            <p>Posted {moment(post.date).fromNow()}</p>
           </div>
-          <div className='edit'>
-            <Link to={`/write?edit=`}>
-              <img src={Edit} alt='' />
-            </Link>
-            <img src={Delete} alt='' />
-          </div>
+          {currentUser?.username === post.username && (
+            <div className='edit'>
+              <Link to={`/write?edit=2`} state={post}>
+                <img src={Edit} alt='' />
+              </Link>
+              <img onClick={handleDelete} src={Delete} alt='' />
+            </div>
+          )}
         </div>
-        <h1>Lorem ipsum dolor sit amet consectetur adipisicing elit.</h1>
-        <p>
-          Lorem ipsum dolor sit amet consectetur adipisicing elit. Corporis hic
-          excepturi sapiente iure at incidunt cumque similique nihil ex, harum
-          nesciunt eaque amet adipisci inventore! Qui quisquam vel accusantium
-          ad!
-        </p>
-        <p>
-          Lorem ipsum dolor sit amet consectetur adipisicing elit. Impedit
-          animi, iure, assumenda voluptatum, est hic amet sit veritatis aut nam
-          repudiandae iusto dignissimos excepturi accusantium suscipit
-          aspernatur omnis molestiae? Iste.Lorem ipsum dolor sit amet
-          consectetur adipisicing elit. Impedit animi, iure, assumenda
-          voluptatum, est hic amet sit veritatis aut nam repudiandae iusto
-          dignissimos excepturi accusantium suscipit aspernatur omnis molestiae?
-          Iste.Lorem ipsum dolor sit amet consectetur adipisicing elit. Impedit
-          animi, iure, assumenda voluptatum, est hic amet sit veritatis aut nam
-          repudiandae iusto dignissimos excepturi accusantium suscipit
-          aspernatur omnis molestiae? Iste.Lorem ipsum dolor sit amet
-          consectetur adipisicing elit. Impedit animi, iure, assumenda
-          voluptatum, est hic amet sit veritatis aut nam repudiandae iusto
-          dignissimos excepturi accusantium suscipit aspernatur omnis molestiae?
-          Iste.
-        </p>
-        <p>
-          Lorem ipsum dolor sit amet consectetur adipisicing elit. Impedit
-          animi, iure, assumenda voluptatum, est hic amet sit veritatis aut nam
-          repudiandae iusto dignissimos excepturi accusantium suscipit
-          aspernatur omnis molestiae? Iste.
-        </p>
+        <h1>{post.title}</h1>
+        {post.desc}
       </div>
-      <Menu />
+      <Menu cat={post.cat} />
     </div>
   );
 };
